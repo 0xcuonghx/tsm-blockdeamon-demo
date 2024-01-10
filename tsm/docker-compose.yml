@@ -1,0 +1,83 @@
+version: "3.8"
+services:
+  db0:
+    image: postgres:15.4-alpine
+    container_name: db0
+    networks:
+      - example-tsm
+    environment:
+      - POSTGRES_DB=db
+      - POSTGRES_USER=db0user
+      - POSTGRES_PASSWORD=db0password
+    restart: always
+    volumes:
+      - ./data/db0:/var/lib/postgresql/data
+
+  db1:
+    container_name: db1
+    image: mariadb:10.8.2
+    networks:
+      - example-tsm
+    environment:
+      MARIADB_USER: db1user
+      MARIADB_PASSWORD: db1password
+      MARIADB_DATABASE: db
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+    command: mysqld --max_connections=1500
+    volumes:
+      - ./data/db1:/var/lib/mysql
+
+  db2:
+    image: postgres:15.2-alpine
+    container_name: db2
+    networks:
+      - example-tsm
+    environment:
+      - POSTGRES_DB=db
+      - POSTGRES_USER=db2user
+      - POSTGRES_PASSWORD=db2password
+    restart: always
+    volumes:
+      - ./data/db2:/var/lib/postgresql/data
+
+  tsm_node_0:
+    image: nexus.sepior.net:19001/tsm-node:59.0.2
+    container_name: tsm-node-0
+    ports:
+      - "8500:8000"
+    networks:
+      - example-tsm
+    environment:
+      - WAIT_HOST=db0:5432
+      - CONFIG_FILE=/config/config.toml
+    volumes:
+      - ./config0.toml:/config/config.toml
+
+  tsm_node_1:
+    image: nexus.sepior.net:19001/tsm-node:59.0.2
+    container_name: tsm-node-1
+    ports:
+      - "8501:8000"
+    networks:
+      - example-tsm
+    environment:
+      - WAIT_HOST=db1:3306
+      - CONFIG_FILE=/config/config.toml
+    volumes:
+      - ./config1.toml:/config/config.toml
+
+  tsm_node_2:
+    image: nexus.sepior.net:19001/tsm-node:59.0.2
+    container_name: tsm-node-2
+    ports:
+      - "8502:8000"
+    networks:
+      - example-tsm
+    environment:
+      - WAIT_HOST=db2:5432
+      - CONFIG_FILE=/config/config2.toml
+    volumes:
+      - ./config2.toml:/config/config2.toml
+
+networks:
+  example-tsm:
