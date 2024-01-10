@@ -1,12 +1,10 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"os"
 
 	"gitlab.com/sepior/go-tsm-sdk/sdk/tsm"
-	"golang.org/x/crypto/sha3"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -60,29 +58,4 @@ func main() {
 	}
 	fmt.Println("Generated key with ID:", keyID)
 
-	chainPath := []uint32{1, 2, 3, 4}
-	derPublicKey, err := ecdsaClients[0].PublicKey(keyID, chainPath)
-	if err != nil {
-		panic(err)
-	}
-
-	publicKey, err := ecdsaClients[0].ParsePublicKey(derPublicKey)
-	if err != nil {
-		panic(err)
-	}
-
-	msg := make([]byte, 2*32)
-	publicKey.X.FillBytes(msg[0:32])
-	publicKey.Y.FillBytes(msg[32:64])
-
-	h := sha3.NewLegacyKeccak256()
-	_, err = h.Write(msg)
-	if err != nil {
-		panic(err)
-	}
-	hashValue := h.Sum(nil)
-
-	// Ethereum address is rightmost 160 bits of the hash value
-	ethAddress := hex.EncodeToString(hashValue[len(hashValue)-20:])
-	fmt.Println("Ethereum address: ", ethAddress)
 }

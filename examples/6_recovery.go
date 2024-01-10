@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/manifoldco/promptui"
 	"gitlab.com/sepior/go-tsm-sdk/sdk/tsm"
 	"golang.org/x/sync/errgroup"
 )
@@ -44,15 +45,17 @@ func main() {
 	// Generate an ECDSA key
 
 	sessionID := tsm.GenerateSessionID()
-	var keyID string
+
 	var eg errgroup.Group
-	for _, ecdsaClient := range ecdsaClients {
-		ecdsaClient := ecdsaClient
-		eg.Go(func() error {
-			var err error
-			keyID, err = ecdsaClient.KeygenWithSessionID(sessionID, "secp256k1")
-			return err
-		})
+	fmt.Println("Enter key id")
+	keyIDPrompt := promptui.Prompt{
+		Label: "Key ID",
+	}
+
+	keyID, err := keyIDPrompt.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return
 	}
 	if err := eg.Wait(); err != nil {
 		log.Fatal(err)
@@ -121,4 +124,9 @@ func main() {
 	fmt.Println("recovered private ECDSA key:", privateECDSAKey)
 	fmt.Println("Recovered master chain code:", hex.EncodeToString(masterChainCode))
 
+	// Convert D value to hexadecimal string
+	privateKeyHex := fmt.Sprintf("%x", privateECDSAKey.D)
+
+	// Print the private key as a hexadecimal string
+	fmt.Printf("Private Key: %s\n", privateKeyHex)
 }

@@ -12,6 +12,8 @@ services:
     restart: always
     volumes:
       - ./data/db0:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   db1:
     container_name: db1

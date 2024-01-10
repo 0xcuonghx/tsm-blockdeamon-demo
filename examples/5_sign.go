@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/manifoldco/promptui"
 	"gitlab.com/sepior/go-tsm-sdk/sdk/tsm"
 	"golang.org/x/sync/errgroup"
 )
@@ -43,22 +44,18 @@ func main() {
 	}
 
 	// Generate ECSDA key
-
-	keyGenSessionID := tsm.GenerateSessionID()
-	var keyID string
 	var eg errgroup.Group
-	for i := 0; i < playerCount; i++ {
-		i := i
-		eg.Go(func() error {
-			var err error
-			keyID, err = ecdsaClients[i].KeygenWithSessionID(keyGenSessionID, "secp256k1")
-			return err
-		})
+
+	fmt.Println("Enter key id")
+	keyIDPrompt := promptui.Prompt{
+		Label: "Key ID",
 	}
-	if err = eg.Wait(); err != nil {
-		panic(err)
+
+	keyID, err := keyIDPrompt.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return
 	}
-	fmt.Println("Generated key with ID:", keyID)
 
 	// Generate partial signatures using the key
 

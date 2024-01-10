@@ -10,6 +10,10 @@ import (
 )
 
 func main() {
+	err := os.Mkdir("./credentials", 0755)
+	if err != nil {
+		panic(err)
+	}
 
 	const (
 		playerCount = 3 // Number of MPC nodes in the TSM
@@ -57,27 +61,6 @@ func main() {
 		panic(err)
 	}
 	err = os.WriteFile("./credentials/admin.json", []byte(adminJson), 0666)
-	if err != nil {
-		panic(err)
-	}
-
-	// Log in as the initial admin, create a regular user, and save the user's credentials in 'user.json'.
-
-	admClient, err := tsm.NewPasswordClientFromCredentials(3, 1, adminCreds)
-	if err != nil {
-		panic(err)
-	}
-	uc = tsm.NewUsersClient(admClient)
-	userCreds, err := uc.CreatePasswordUser("user", "")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Created regular user with user ID", userCreds.UserID)
-	userJson, err := userCreds.Encode()
-	if err != nil {
-		panic(err)
-	}
-	err = os.WriteFile("./credentials/user.json", []byte(userJson), 0666)
 	if err != nil {
 		panic(err)
 	}
