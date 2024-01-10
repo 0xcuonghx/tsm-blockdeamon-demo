@@ -1,13 +1,17 @@
 package main
 
 import (
-	"encoding/hex"
+	"crypto/ecdsa"
+	"crypto/x509/pkix"
+	"encoding/asn1"
+	"errors"
 	"fmt"
 	"os"
 
+	secp "github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/manifoldco/promptui"
 	"gitlab.com/sepior/go-tsm-sdk/sdk/tsm"
-	"golang.org/x/crypto/sha3"
 )
 
 func main() {
@@ -55,29 +59,37 @@ func main() {
 		return
 	}
 
-	chainPath := []uint32{1, 2, 3, 4}
-	derPublicKey, err := ecdsaClients[0].PublicKey(keyID, chainPath)
+	// Get the public key
+	pkDER, err := ecdsaClients[0].PublicKey(keyID, nil)
 	if err != nil {
-		panic(err)
+		// handle error
 	}
-
-	publicKey, err := ecdsaClients[0].ParsePublicKey(derPublicKey)
+	pk, err := ASN1ParseSecp256k1PublicKey(pkDER)
 	if err != nil {
-		panic(err)
+		// handle error
 	}
+	address := crypto.PubkeyToAddress(*pk)
 
-	msg := make([]byte, 2*32)
-	publicKey.X.FillBytes(msg[0:32])
-	publicKey.Y.FillBytes(msg[32:64])
+	fmt.Println("Ethereum address: ", address)
 
-	h := sha3.NewLegacyKeccak256()
-	_, err = h.Write(msg)
+}
+
+func ASN1ParseSecp256k1PublicKey(publicKey []byte) (*ecdsa.PublicKey, error) {
+	publicKeyInfo := struct {
+		Raw       asn1.RawContent
+		Algorithm pkix.AlgorithmIdentifier
+		PublicKey asn1.BitString
+	}{}
+
+	postfix, err := asn1.Unmarshal(publicKey, &publicKeyInfo)
+	if err != nil || len(postfix) > 0 {
+		return nil, errors.New("invalid or incomplete ASN1")
+	}
+	// check params
+
+	pk, err := secp.ParsePubKey(publicKeyInfo.PublicKey.Bytes)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	hashValue := h.Sum(nil)
-
-	// Ethereum address is rightmost 160 bits of the hash value
-	ethAddress := hex.EncodeToString(hashValue[len(hashValue)-20:])
-	fmt.Println("Ethereum address: ", ethAddress)
+	return pk.ToECDSA(), nil
 }
